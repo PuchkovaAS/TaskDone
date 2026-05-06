@@ -12,7 +12,7 @@ defmodule WorkReport.Model.ReportTypedStruct do
         when is_binary(type) and is_binary(desc) and is_integer(time_minutes) do
       {:ok,
        %__MODULE__{
-         type: String.capitalize(type),
+         type: String.upcase(type),
          desc: String.trim(desc),
          time_minutes: time_minutes
        }}
