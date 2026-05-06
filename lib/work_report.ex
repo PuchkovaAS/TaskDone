@@ -25,15 +25,11 @@ defmodule WorkReport do
   end
 
   def do_report(params, _file) do
-    # alias WorkReport.Model.ReportTypedStruct, as: R
     _month = Map.get(params, :month, :erlang.date() |> elem(1))
     _day = Map.get(params, :day, :erlang.date() |> elem(2))
     file_path = "./test/sample/report-2.md"
     {:ok, month_list} = Parser.parse_report(file_path)
     dbg(month_list)
-    #
-    # new_report = R.MonthReport.new("March", " sdfdfsd ")
-    # dbg(new_report)
   end
 
   def help() do

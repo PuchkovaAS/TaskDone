@@ -37,7 +37,7 @@ defmodule WorkReport.Model.ReportTypedStruct do
     end
 
     def add_task(day, task_params) do
-      case Task.new(task_params.type, task_params.desc, task_params.time) do
+      case Task.new(task_params.type, task_params.desc, task_params.time_minutes) do
         {:ok, task} -> {:ok, %{day | tasks: [task | day.tasks]}}
         {:error, _} -> {:error, :invalid_task}
       end

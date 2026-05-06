@@ -1,22 +1,45 @@
 defmodule WorkReport.Parser do
   alias WorkReport.Model.ReportTypedStruct, as: R
 
+  defp parse_time_h_m(time_str) do
+    with [h_part, m_part] <- String.split(time_str, ~r/\s+/, parts: 2),
+         {hours, ""} <- Integer.parse(String.trim(h_part) |> String.trim_trailing("h")),
+         {mins, ""} <- Integer.parse(String.trim(m_part) |> String.trim_trailing("m")) do
+      hours * 60 + mins
+    else
+      _ -> parse_time_m_h(time_str)
+    end
+  end
+
+  defp parse_time_m_h(time_str) do
+    with [m_part, h_part] <- String.split(time_str, ~r/\s+/, parts: 2),
+         {mins, ""} <- Integer.parse(String.trim(m_part) |> String.trim_trailing("m")),
+         {hours, ""} <- Integer.parse(String.trim(h_part) |> String.trim_trailing("h")) do
+      hours * 60 + mins
+    else
+      _ -> parse_time_h(time_str)
+    end
+  end
+
+  defp parse_time_h(time_str) do
+    with {hours, ""} <- Integer.parse(String.trim(time_str) |> String.trim_trailing("h")) do
+      hours * 60
+    else
+      _ -> parse_time_m(time_str)
+    end
+  end
+
+  defp parse_time_m(time_str) do
+    with {mins, ""} <- Integer.parse(String.trim(time_str) |> String.trim_trailing("m")) do
+      mins
+    else
+      _ -> 0
+    end
+  end
+
   @spec parse_time(String.t()) :: non_neg_integer()
   def parse_time(time_str) do
-    time_str = String.trim(time_str)
-
-    case String.split(time_str, " ", parts: 2) do
-      [h_part, m_part] ->
-        hours = String.trim_trailing(h_part, "h") |> String.to_integer()
-        mins = String.trim_trailing(m_part, "m") |> String.to_integer()
-        hours * 60 + mins
-
-      [m_part] ->
-        String.trim_trailing(m_part, "m") |> String.to_integer()
-
-      _ ->
-        0
-    end
+    parse_time_h_m(String.trim(time_str))
   end
 
   def parse_report(file_path) do
