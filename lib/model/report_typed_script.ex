@@ -3,65 +3,51 @@ defmodule WorkReport.Model.ReportTypedStruct do
     @type t() :: %__MODULE__{
             type: String.t(),
             desc: String.t(),
-            time: String.t()
+            time_minutes: non_neg_integer()
           }
-    @enforce_keys [:title]
-    defstruct [
-      :type,
-      :desc,
-      :time
-    ]
+    @enforce_keys [:type, :desc, :time_minutes]
+    defstruct [:type, :desc, :time_minutes]
 
-    def new(type, desc, time) when is_binary(type) and is_binary(desc) and is_binary(time) do
+    def new(type, desc, time_minutes)
+        when is_binary(type) and is_binary(desc) and is_integer(time_minutes) do
       {:ok,
        %__MODULE__{
          type: String.capitalize(type),
-         desc: desc,
-         time: time
+         desc: String.trim(desc),
+         time_minutes: time_minutes
        }}
     end
   end
 
   defmodule Day do
     @type t() :: %__MODULE__{
-            num: [1..31],
-            weekday: String.t()
+            num: 1..31,
+            weekday: String.t(),
+            tasks: [Task.t()]
           }
     @enforce_keys [:num, :weekday]
-    defstruct [:num, :weekday]
+    defstruct [:num, :weekday, tasks: []]
 
-    @spec new(String.t(), String.t()) :: {:ok, t()} | {:error, String.t()}
     def new(num, weekday) when is_binary(num) and is_binary(weekday) do
       {:ok,
        %__MODULE__{
          num: String.to_integer(num),
-         weekday: weekday
+         weekday: String.trim(weekday)
        }}
     end
-  end
 
-  defmodule Event do
-    @type t() :: %__MODULE__{
-            title: String.t(),
-            place: Place.t(),
-            time: Time.t(),
-            participants: list(Participant.t()),
-            agenda: [Topic.t()]
-          }
-    @enforce_keys [:title, :place, :time]
-    defstruct [
-      :title,
-      :place,
-      :time,
-      {:participants, []},
-      {:agenda, []}
-    ]
+    def add_task(day, task_params) do
+      case Task.new(task_params.type, task_params.desc, task_params.time) do
+        {:ok, task} -> {:ok, %{day | tasks: [task | day.tasks]}}
+        {:error, _} -> {:error, :invalid_task}
+      end
+    end
   end
 
   defmodule MonthReport do
     @type t() :: %__MODULE__{
             month_name: String.t(),
-            month_ind: 0..12,
+            month_ind: 1..12,
             days: [Day.t()]
           }
     @enforce_keys [:month_name]
@@ -82,38 +68,28 @@ defmodule WorkReport.Model.ReportTypedStruct do
       "December" => 12
     }
 
-    @spec new(String.t()) :: {:ok, t()} | {:error, String.t()}
     def new(month_name) when is_binary(month_name) do
       case parse_month_index(month_name) do
-        0 ->
-          {:error, "Unknown month: #{month_name}"}
-
-        idx ->
-          {:ok,
-           %__MODULE__{
-             month_name: String.capitalize(month_name),
-             month_ind: idx
-           }}
+        0 -> {:error, "Unknown month: #{month_name}"}
+        idx -> {:ok, %__MODULE__{month_name: String.capitalize(month_name), month_ind: idx}}
       end
     end
 
     def add_day(month, %{num_day: num_day, weekday: weekday}) do
       case Day.new(num_day, weekday) do
-        {:ok, day} ->
-          {:ok, %{month | days: [day | month.days]}}
-
-        {:error, error} ->
-          {:error, error}
+        {:ok, day} -> {:ok, %{month | days: [day | month.days]}}
+        {:error, _} -> {:error, :invalid_day}
       end
     end
 
-    def add_task(day, %{type: type, desc: desc, time: time}) do
-      case Task.new(type, desc, time) do
-        {:ok, task} ->
-          {:ok, %{day | tasks: [task | day.tasks]}}
+    def add_task(%__MODULE__{days: []} = _month, _), do: {:error, :no_active_day}
 
-        {:error, error} ->
-          {:error, error}
+    def add_task(month, task_params) do
+      [latest_day | rest_days] = month.days
+
+      case Day.add_task(latest_day, task_params) do
+        {:ok, updated_day} -> {:ok, %{month | days: [updated_day | rest_days]}}
+        err -> err
       end
     end
 
