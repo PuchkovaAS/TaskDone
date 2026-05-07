@@ -34,7 +34,7 @@ defmodule WorkReport do
 
     with {:ok, report_month} <- find_month(month, month_list),
          {:ok, report_day} <- find_day(day, report_month.days) do
-      IO.puts(Formatter.format_responce(report_day))
+      IO.puts(Formatter.format_responce(report_day, report_month))
     else
       {:error, :not_found_month} ->
         IO.inspect("Month #{month} is not found")
