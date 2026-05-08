@@ -40,7 +40,7 @@ defmodule WorkReport.Formatter do
 
   @spec add_task_to_responce([M.Task], [String.t()], non_neg_integer()) :: String.t()
   defp add_task_to_responce([task | tasks], list_report, total_time) do
-    new_task = " - #{task.type}: #{task.desc} - #{format_time(task.time_minutes)}"
+    new_task = "- #{task.type}: #{task.desc} - #{format_time(task.time_minutes)}"
 
     add_task_to_responce(tasks, [new_task | list_report], total_time + task.time_minutes)
   end
@@ -48,7 +48,7 @@ defmodule WorkReport.Formatter do
   defp add_task_to_responce([], list_report, total_time) do
     list_report = Enum.join(list_report, "\n")
 
-    list_report <> "\n   Total: #{format_time(total_time)}"
+    list_report <> "\n  Total: #{format_time(total_time)}"
   end
 
   # TODO total_responce for month
@@ -64,22 +64,28 @@ defmodule WorkReport.Formatter do
       "WS" => 0
     }
 
-    # days = 0
-    task_map = add_day_to_month_response(month.days, task_map)
+    cnt_days = 0
+    {task_map, cnt_days} = add_day_to_month_response(month.days, task_map, cnt_days)
 
-    task_map
-    |> Enum.map(fn {key, value} -> "- #{key}: #{format_time(value)}" end)
-    |> Enum.join("\n")
+    total_time = Enum.reduce(task_map, 0, fn {_key, time_minutes}, acc -> acc + time_minutes end)
+
+    response =
+      task_map
+      |> Enum.map(fn {type, time_minutes} -> "- #{type}: #{format_time(time_minutes)}" end)
+      |> Enum.join("\n")
+
+    response <>
+      "\n  Total: #{format_time(total_time)}, Days: #{cnt_days}, Avg: #{format_time(div(total_time, cnt_days))}"
   end
 
-  @spec add_day_to_month_response([M.Day], map()) :: map()
-  defp add_day_to_month_response([day | days], task_map) do
+  @spec add_day_to_month_response([M.Day], map(), Integer.t()) :: {map(), Integer.t()}
+  defp add_day_to_month_response([day | days], task_map, cnt_days) do
     task_map = add_task_from_day_to_month_response(day.tasks, task_map)
-    add_day_to_month_response(days, task_map)
+    add_day_to_month_response(days, task_map, cnt_days + 1)
   end
 
-  defp add_day_to_month_response([], task_map) do
-    task_map
+  defp add_day_to_month_response([], task_map, cnt_days) do
+    {task_map, cnt_days}
   end
 
   @spec add_task_from_day_to_month_response([M.Task], map()) :: map()
