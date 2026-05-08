@@ -37,26 +37,26 @@ defmodule WorkReport do
       IO.puts(Formatter.format_responce(report_day, report_month))
     else
       {:error, :not_found_month} ->
-        IO.inspect("Month #{month} is not found")
+        IO.puts("Month #{month} is not found")
 
       {:error, :not_found_day} ->
-        IO.inspect("Day #{day} is not found in month #{month}")
+        IO.puts("Day #{day} is not found in month #{month}")
 
       other ->
-        IO.inspect("Неожиданная ошибка #{other}")
+        IO.puts("Неожиданная ошибка #{other}")
     end
   end
 
   def help() do
-    IO.puts("""
-    USAGE:
-        work_report [OPTIONS] <path/to/report.md>
-    OPTIONS:
-        -m, --month <M>  Show report for month (int), current month by default
-        -d, --day <D>    Show report for day (int), current day by default
-        -v, --version    Show version
-        -h, --help       Show this help message
-    """)
+    IO.write("""
+USAGE:
+work_report [OPTIONS] <path/to/report.md>
+OPTIONS:
+-m, --month <M> Show report for month (int), current month by default
+-d, --day <D> Show report for day (int), current day by default
+-v, --version Show version
+-h, --help Show this help message
+""")
   end
 
   def version() do
